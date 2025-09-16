@@ -48,13 +48,15 @@ jobs:
         path: '**/*.trx'
     
 
-    - name: Publish test results
+    - name: Publish Project
       run: |
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ${{ env.PUBLISH_DIRECTORY }} --no-build
 
     - name: Create zip package
       run: |
-         Compress-Archive -Path ${{ env.PUBLISH_DIRECTORY }}/* -DestinationPath ${{ env.ZIP_NAME }} -Force
+        cd ${{ env.PUBLISH_DIRECTORY }}
+        zip -r "../${{ env.ZIP_NAME }}" ./*
+        cd ..
     - name: Upload zip artifact
       uses: actions/upload-artifact@v4
       with:
