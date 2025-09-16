@@ -15,6 +15,13 @@ jobs:
             dotnet-version: | 
               9.0.x
         - uses: actions/checkout@v5
+        - name: Cache dependencies
+          uses: actions/cache@v4
+          with:
+            path: ~/.nuget/packages
+            key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+            restore-keys: |
+              ${{ runner.os }}-nuget-
         - name: restore
           run: dotnet restore src/Presentation/Nop.Web/Nop.Web.csproj
         - name: build
