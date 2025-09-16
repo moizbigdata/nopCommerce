@@ -38,7 +38,7 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal --logger trx
+        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj --configuration Release --no-build --verbosity normal --logger trx
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
