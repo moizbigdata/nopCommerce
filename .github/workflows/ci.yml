@@ -60,14 +60,8 @@ jobs:
         dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ${{ env.PUBLISH_DIRECTORY }} --no-build
 
     - name: Create zip package
-      run: |
-       # Extract repository name and build number
-        REPO_NAME="${{ github.repository }}"
-        REPO_BASE_NAME="${REPO_NAME#*/}"  # Remove username/organization
-        CLEAN_NAME=$(echo "$REPO_BASE_NAME" | tr -cd '[:alnum:]-_')
-        BUILD_NUMBER="${{ github.run_number }}"
-        
-        ZIP_NAME="${CLEAN_NAME}-${BUILD_NUMBER}.zip"
+      run: |      
+        ZIP_NAME="${{ github.repository }}-${{ github.run_number }}.zip"
         cd ${{ env.PUBLISH_DIRECTORY }}
         zip -r "../${{ ZIP_NAME }}" ./*
         cd ..
