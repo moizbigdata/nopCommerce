@@ -13,6 +13,8 @@ env:
   DOTNET_VERSION: '9.0'
   PUBLISH_PATH: './published'
   SOLUTION_FILE: '*.sln'
+  PUBLISH_DIRECTORY: 'published'
+  ZIP_NAME: 'nopcommerce-package-${{ github.run_number }}.zip'
 
 jobs:
   build-test:
@@ -36,107 +38,32 @@ jobs:
 
     - name: Run tests with coverage
       run: |
-        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj \
-          --configuration Release \
-          --no-build \
-          --verbosity normal \
-          --logger trx \
-          --logger "console;verbosity=detailed" \
-          --results-directory ./TestResults \
-          --collect:"XPlat Code Coverage" \
-          --settings coverlet.runsettings
+        dotnet test ${{ env.SOLUTION_FILE }} --configuration Release --no-build --verbosity normal --logger trx
 
     - name: Upload test results
       uses: actions/upload-artifact@v4
       if: always()
       with:
         name: test-results
-        path: ./TestResults/**/*
-        retention-days: 30
+        path: '**/*.trx'
+    
 
     - name: Publish test results
       uses: EnricoMi/publish-unit-test-result-action@v2
       if: always()
       with:
         files: |
-          ./TestResults/**/*.trx
+          '**/*.trx'
         check_name: "Test Results"
         comment_mode: create new
         report_individual_runs: true
 
-    - name: Publish to folder
+    - name: Create zip package
       run: |
-        dotnet publish ./src/Presentation/Nop.Web/Nop.Web.csproj \
-          --configuration Release \
-          --output ${{ env.PUBLISH_PATH }} \
-          --no-build \
-          --verbosity normal
-
-    - name: Upload published folder
+         Compress-Archive -Path ${{ env.PUBLISH_DIRECTORY }}/* -DestinationPath ${{ env.ZIP_NAME }} -Force
+    - name: Upload zip artifact
       uses: actions/upload-artifact@v4
       with:
-        name: nopcommerce-published
-        path: ${{ env.PUBLISH_PATH }}
-        retention-days: 30
-
-  package-release:
-    name: Package and Release
-    runs-on: ubuntu-latest
-    needs: build-test
-    if: github.event_name == 'release' || github.event_name == 'workflow_dispatch'
-
-    steps:
-    - name: Download published artifacts
-      uses: actions/download-artifact@v4
-      with:
-        name: nopcommerce-published
-        path: ./nopcommerce-published
-
-    - name: Create deployment package
-      run: |
-        cd ./nopcommerce-published
-        zip -r ../nopcommerce-deployment-${{ github.run_number }}.zip . \
-          -x "*.pdb" "*.xml" "**/ref/*" "**/runtimes/linux*/*" "**/runtimes/osx*/*"
-        cd ..
-        
-    - name: Calculate package hash
-      run: |
-        sha256sum nopcommerce-deployment-${{ github.run_number }}.zip > nopcommerce-deployment-${{ github.run_number }}.zip.sha256
-
-    - name: Upload deployment package
-      uses: actions/upload-artifact@v4
-      with:
-        name: nopcommerce-deployment-package
-        path: |
-          nopcommerce-deployment-*.zip
-          nopcommerce-deployment-*.zip.sha256
-
-    - name: Attach to release
-      if: github.event_name == 'release'
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ github.event.release.upload_url }}
-        asset_path: ./nopcommerce-deployment-${{ github.run_number }}.zip
-        asset_name: nopcommerce-deployment-${{ github.event.release.tag_name }}.zip
-        asset_content_type: application/zip
-
-  deploy-staging:
-    name: Deploy to Staging
-    runs-on: ubuntu-latest
-    needs: package-release
-    if: github.ref == 'refs/heads/develop'
-    environment: staging
-
-    steps:
-    - name: Download deployment package
-      uses: actions/download-artifact@v4
-      with:
-        name: nopcommerce-deployment-package
-
-    - name: Deploy to staging server
-      run: |
-        echo "Deploying to staging environment..."
-        # Add your deployment commands here
-        # Example: scp, rsync, or API calls to your hosting provider
+        name: nopcommerce-package
+        path: ${{ env.ZIP_NAME }}
+    
