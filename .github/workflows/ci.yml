@@ -29,14 +29,14 @@ jobs:
         dotnet-version: ${{ env.DOTNET_VERSION }}
 
     - name: Restore dependencies
-      run: dotnet restore ${{ env.SOLUTION_FILE }}
+      run: dotnet restore src/Presentation/Nop.Web/Nop.Web.csproj
 
     - name: Build solution
-      run: dotnet build ${{ env.SOLUTION_FILE }} --configuration Release --no-restore
+      run: dotnet build src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --no-restore
 
     - name: Run tests with coverage
       run: |
-        dotnet test ${{ env.SOLUTION_FILE }} \
+        dotnet test src/Tests/Nop.Tests/Nop.Tests.csproj \
           --configuration Release \
           --no-build \
           --verbosity normal \
