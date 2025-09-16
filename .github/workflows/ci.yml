@@ -49,14 +49,8 @@ jobs:
     
 
     - name: Publish test results
-      uses: EnricoMi/publish-unit-test-result-action@v2
-      if: always()
-      with:
-        files: |
-          '**/*.trx'
-        check_name: "Test Results"
-        comment_mode: create new
-        report_individual_runs: true
+      run: |
+        dotnet publish src/Presentation/Nop.Web/Nop.Web.csproj --configuration Release --output ${{ env.PUBLISH_DIRECTORY }} --no-build
 
     - name: Create zip package
       run: |
